@@ -3,42 +3,34 @@ import java.awt.*;
 import java.awt.event.*;
 import java.applet.*;
 import java.net.*;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 public class SoundTemplate extends JFrame implements Runnable, ActionListener
 {
 	int rows = 15;
-	int cols = 10;
+	int cols = 25;
 
 	JToggleButton button[][] = new JToggleButton[rows][cols];
 	JPanel panel = new JPanel();
+	JScrollPane scrollPane;
 	AudioClip soundClip[] = new AudioClip[15];
 	boolean notStopped = true;
-	JFrame frame = new JFrame();
 	JMenuBar menubar;
 	JMenu size, pbsongs, ucsongs;
-	JMenuItem add, remove, twinkle;
+	JMenuItem add, remove, twinkle, under;
 	JButton clear, random;
 	Thread timing;
 	boolean paused=false;
+	String[] names={"C6","B5","A5","G5","F5","E5","D5","C5","B4","A4","G4","F4","E4","D4","C4"};
 	public SoundTemplate()
 	{
 		this.setLayout(new BorderLayout());
 		try
 		{
-			soundClip[0] = JApplet.newAudioClip(new URL("file:C6.wav"));
-			soundClip[1] = JApplet.newAudioClip(new URL("file:B5.wav"));
-			soundClip[2] = JApplet.newAudioClip(new URL("file:A5.wav"));
-			soundClip[3] = JApplet.newAudioClip(new URL("file:G5.wav"));
-			soundClip[4] = JApplet.newAudioClip(new URL("file:F5.wav"));
-			soundClip[5] = JApplet.newAudioClip(new URL("file:E5.wav"));
-			soundClip[6] = JApplet.newAudioClip(new URL("file:D5.wav"));
-			soundClip[7] = JApplet.newAudioClip(new URL("file:C5.wav"));
-			soundClip[8] = JApplet.newAudioClip(new URL("file:B4.wav"));
-			soundClip[9] = JApplet.newAudioClip(new URL("file:A4.wav"));
-			soundClip[10] = JApplet.newAudioClip(new URL("file:G4.wav"));
-			soundClip[11] = JApplet.newAudioClip(new URL("file:F4.wav"));
-			soundClip[12] = JApplet.newAudioClip(new URL("file:E4.wav"));
-			soundClip[13] = JApplet.newAudioClip(new URL("file:D4.wav"));
-			soundClip[14] = JApplet.newAudioClip(new URL("file:C4.wav"));
+			for(int x=0;x<names.length;x++)
+				soundClip[x] = JApplet.newAudioClip(new URL("file:"+names[x]+".wav"));
+
 		}catch(MalformedURLException mue)
 		{
 			System.out.println("File not found");
@@ -47,20 +39,30 @@ public class SoundTemplate extends JFrame implements Runnable, ActionListener
 		for (int i = 0; i < rows; i++){
 			for (int j = 0; j < cols; j++){
 				button[i][j] = new JToggleButton();
+				button[i][j].setPreferredSize(new Dimension(10,10));
+				button[i][j].setMargin(new Insets(0, 0, 0, 0));
+				button[i][j].setText(names[i]);
 				panel.add(button[i][j]);
 			}
 		}
-
+		scrollPane=new JScrollPane(panel);
+		scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
 		menubar = new JMenuBar();
 		size = new JMenu ("Size");
 		add = new JMenuItem("Add Column");
+		add.addActionListener(this);
 	 	remove = new JMenuItem("Remove Column");
+	 	remove.addActionListener(this);
 		size.add(add);
 		size.add(remove);
 		menubar.add(size);
 		pbsongs = new JMenu ("Pre-Built Songs");
 		twinkle = new JMenuItem ("Twinkle Twinkle Little Star");
+		twinkle.addActionListener(this);
+		under = new JMenuItem ("Under the Sea");
+		under.addActionListener(this);
 		pbsongs.add(twinkle);
+		pbsongs.add(under);
 		menubar.add(pbsongs);
 		ucsongs = new JMenu ("User Songs");
 		menubar.add(ucsongs);
@@ -71,12 +73,12 @@ public class SoundTemplate extends JFrame implements Runnable, ActionListener
 		menubar.add(clear);
 		menubar.add(new JLabel("  "));
 		menubar.add(random);
-
 		this.add(menubar, BorderLayout.NORTH);
-		this.add(panel, BorderLayout.CENTER);
-		setSize(rows*30,cols*60);
-		setVisible(true);
-		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		this.add(scrollPane, BorderLayout.CENTER);
+		scrollPane.setPreferredSize(new Dimension(1200,800));
+		this.setSize(1200,800);//cols*60,rows*30);
+		this.setVisible(true);
+		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		timing = new Thread(this);
 		timing.start();
 	}
@@ -102,6 +104,70 @@ public class SoundTemplate extends JFrame implements Runnable, ActionListener
 				}
 			}
 		}
+		if (e.getSource() == add){
+			resizePanel(rows, cols+1);
+		}
+		if (e.getSource() == remove){
+			resizePanel(rows, cols-1);
+		}
+		if (e.getSource() == twinkle){
+			System.out.println ("twinkle");
+			preSelected("Song1.txt");
+		}
+		if (e.getSource() == under){
+			System.out.println ("under");
+			preSelected("starWars.txt");
+		}
+	}
+
+	public void preSelected(String songText){
+		String textInput;
+		try {
+			BufferedReader input = new BufferedReader(new FileReader(songText));
+			textInput=input.readLine();
+			System.out.println(button.length+" "+button[0].length);
+			resizePanel (rows, textInput.length());
+			int row = 0;
+			while(textInput!= null)
+			{
+				String[] notes = textInput.split("");
+				for (int i = 0; i < notes.length; i++){
+					if (notes[i].equals("X"))
+						button[row][i].setSelected(true);
+				}
+				row++;
+				textInput=input.readLine();
+			}
+
+		}
+		catch (IOException io)
+		{
+			System.err.println("File does not exist");
+		}
+	}
+
+	public void resizePanel(int r, int c){
+		rows = r;
+		cols = c;
+		this.remove(scrollPane);
+		panel = new JPanel();
+		panel.setLayout(new GridLayout(r,c,10,10));
+		panel.setPreferredSize(new Dimension(c*50,r*40));
+		button=new JToggleButton[r][c];
+		System.out.println(button.length+" "+button[0].length);
+		for (int i = 0; i < r; i++){
+			for (int j = 0; j < c; j++){
+				button[i][j] = new JToggleButton();
+				button[i][j].setPreferredSize(new Dimension(10,10));
+				button[i][j].setMargin(new Insets(0, 0, 0, 0));
+				button[i][j].setText(names[i]);
+				panel.add(button[i][j]);
+			}
+		}
+		scrollPane = new JScrollPane(panel);
+		scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
+		this.add(scrollPane, BorderLayout.CENTER);
+		this.revalidate();
 	}
 
 	public void run()
@@ -112,7 +178,7 @@ public class SoundTemplate extends JFrame implements Runnable, ActionListener
 				{
 					for (int j = 0; j < cols; j++){
 						for (int i = 0; i < rows; i++) {
-							if(button[i][j].isSelected()){
+							if(button[i][j]!=null && button[i][j].isSelected()){
 								soundClip[i].stop();
 								soundClip[i].play();
 							}
