@@ -4,8 +4,11 @@ import java.awt.event.*;
 import java.applet.*;
 import java.net.*;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.File;
 public class SoundTemplate extends JFrame implements Runnable, ActionListener
 {
 	int rows = 15;
@@ -17,9 +20,9 @@ public class SoundTemplate extends JFrame implements Runnable, ActionListener
 	AudioClip soundClip[] = new AudioClip[15];
 	boolean notStopped = true;
 	JMenuBar menubar;
-	JMenu size, pbsongs, ucsongs;
-	JMenuItem add, remove, twinkle, under;
-	JButton clear, random;
+	JMenu size, pbsongs;
+	JMenuItem add, remove, twinkle, under, love;
+	JButton clear, random, save, load;
 	Thread timing;
 	boolean paused=false;
 	String[] names={"C6","B5","A5","G5","F5","E5","D5","C5","B4","A4","G4","F4","E4","D4","C4"};
@@ -61,18 +64,27 @@ public class SoundTemplate extends JFrame implements Runnable, ActionListener
 		twinkle.addActionListener(this);
 		under = new JMenuItem ("Under the Sea");
 		under.addActionListener(this);
+		love = new JMenuItem ("Can't Help Falling in Love");
+		love.addActionListener(this);
 		pbsongs.add(twinkle);
 		pbsongs.add(under);
+		pbsongs.add(love);
 		menubar.add(pbsongs);
-		ucsongs = new JMenu ("User Songs");
-		menubar.add(ucsongs);
+		load = new JButton ("Load");
+		load.addActionListener(this);
+		menubar.add(load);
+		menubar.add(new JLabel("  "));
 		clear = new JButton ("Clear");
 		random = new JButton ("Random");
+		save = new JButton ("Save");
 		clear.addActionListener(this);
 		random.addActionListener(this);
-		menubar.add(clear);
-		menubar.add(new JLabel("  "));
+		save.addActionListener(this);
 		menubar.add(random);
+		menubar.add(new JLabel("  "));
+		menubar.add(save);
+		menubar.add(new JLabel("  "));
+		menubar.add(clear);
 		this.add(menubar, BorderLayout.NORTH);
 		this.add(scrollPane, BorderLayout.CENTER);
 		scrollPane.setPreferredSize(new Dimension(1200,800));
@@ -116,7 +128,42 @@ public class SoundTemplate extends JFrame implements Runnable, ActionListener
 		}
 		if (e.getSource() == under){
 			System.out.println ("under");
-			preSelected("starWars.txt");
+			preSelected("Song2.txt");
+		}
+		if (e.getSource() == love){
+			System.out.println ("love");
+			preSelected("Song3.txt");
+		}
+		if (e.getSource() == save){
+			String fileName = JOptionPane.showInputDialog("Enter the file name.");
+			String notes = "";
+			for (int i = 0; i < rows; i++){
+				for (int j = 0; j < cols; j++){
+					if (button[i][j].isSelected())
+						notes+="X";
+					else
+						notes+="O";
+				}
+				notes+="\n";
+		 	}
+		 	try {
+				BufferedWriter OutputStream = new BufferedWriter(new FileWriter(fileName+".txt"));
+				OutputStream.write(notes);
+				OutputStream.close();
+			} catch (IOException io){
+			}
+		}
+		if (e.getSource() == load){
+			System.out.println ("load");
+			JFileChooser chooser = new JFileChooser();
+			if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION){
+				File f = chooser.getSelectedFile();
+				String filePath = f.getPath();
+				try {
+					preSelected (f.getName());
+				} catch (Exception ex){
+				}
+			}
 		}
 	}
 
