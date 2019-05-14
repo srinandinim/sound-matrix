@@ -1,4 +1,5 @@
 import javax.swing.*;
+import javax.swing.border.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.applet.*;
@@ -22,10 +23,11 @@ public class SoundTemplate extends JFrame implements Runnable, ActionListener
 	JMenuBar menubar;
 	JMenu size, pbsongs;
 	JMenuItem add, remove, twinkle, under, love;
-	JButton clear, random, save, load;
+	JButton clear, random, save, load, pause;
 	Thread timing;
-	boolean paused=false;
+	boolean paused;
 	String[] names={"C6","B5","A5","G5","F5","E5","D5","C5","B4","A4","G4","F4","E4","D4","C4"};
+	int colCounter = 0;
 	public SoundTemplate()
 	{
 		this.setLayout(new BorderLayout());
@@ -45,9 +47,11 @@ public class SoundTemplate extends JFrame implements Runnable, ActionListener
 				button[i][j].setPreferredSize(new Dimension(10,10));
 				button[i][j].setMargin(new Insets(0, 0, 0, 0));
 				button[i][j].setText(names[i]);
+				button[i][j].setBorder(new LineBorder(Color.BLACK, 2));//BorderFactory.createStrokeBorder(new BasicStroke(2.0f)));
 				panel.add(button[i][j]);
 			}
 		}
+		paused = true;
 		scrollPane=new JScrollPane(panel);
 		scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
 		menubar = new JMenuBar();
@@ -77,14 +81,18 @@ public class SoundTemplate extends JFrame implements Runnable, ActionListener
 		clear = new JButton ("Clear");
 		random = new JButton ("Random");
 		save = new JButton ("Save");
+		pause = new JButton ("Play");
 		clear.addActionListener(this);
 		random.addActionListener(this);
 		save.addActionListener(this);
+		pause.addActionListener(this);
 		menubar.add(random);
 		menubar.add(new JLabel("  "));
 		menubar.add(save);
 		menubar.add(new JLabel("  "));
 		menubar.add(clear);
+		menubar.add(new JLabel("  "));
+		menubar.add(pause);
 		this.add(menubar, BorderLayout.NORTH);
 		this.add(scrollPane, BorderLayout.CENTER);
 		scrollPane.setPreferredSize(new Dimension(1200,800));
@@ -99,6 +107,7 @@ public class SoundTemplate extends JFrame implements Runnable, ActionListener
 		for (int i = 0; i < rows; i++){
 			for (int j = 0; j < cols; j++){
 				button[i][j].setSelected(false);
+				button[i][j].setBorder(new LineBorder(Color.BLACK, 2));
 			}
 		}
 	}
@@ -134,6 +143,17 @@ public class SoundTemplate extends JFrame implements Runnable, ActionListener
 			System.out.println ("love");
 			preSelected("Song3.txt");
 		}
+		if (e.getSource() == pause){
+			if (paused) {
+				paused = false;
+				pause.setText ("Pause");
+			}
+			else {
+				paused = true;
+				pause.setText ("Play");
+			}
+
+		}
 		if (e.getSource() == save){
 			String fileName = JOptionPane.showInputDialog("Enter the file name.");
 			String notes = "";
@@ -155,6 +175,7 @@ public class SoundTemplate extends JFrame implements Runnable, ActionListener
 		}
 		if (e.getSource() == load){
 			System.out.println ("load");
+			colCounter = 0;
 			JFileChooser chooser = new JFileChooser();
 			if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION){
 				File f = chooser.getSelectedFile();
@@ -169,6 +190,7 @@ public class SoundTemplate extends JFrame implements Runnable, ActionListener
 
 	public void preSelected(String songText){
 		String textInput;
+		colCounter = 0;
 		try {
 			BufferedReader input = new BufferedReader(new FileReader(songText));
 			textInput=input.readLine();
@@ -209,6 +231,7 @@ public class SoundTemplate extends JFrame implements Runnable, ActionListener
 				button[i][j].setMargin(new Insets(0, 0, 0, 0));
 				button[i][j].setText(names[i]);
 				panel.add(button[i][j]);
+				button[i][j].setBorder(new LineBorder(Color.BLACK, 2));
 			}
 		}
 		scrollPane = new JScrollPane(panel);
@@ -221,18 +244,22 @@ public class SoundTemplate extends JFrame implements Runnable, ActionListener
 	{
 		do {
 			try {
-				if(!paused)
-				{
-					for (int j = 0; j < cols; j++){
+				while (!paused && colCounter < cols) {
 						for (int i = 0; i < rows; i++) {
-							if(button[i][j]!=null && button[i][j].isSelected()){
+							if(button[i][colCounter]!=null && button[i][colCounter].isSelected()){
 								soundClip[i].stop();
 								soundClip[i].play();
+								button[i][colCounter].setBorder(new LineBorder(Color.RED, 2));
 							}
 						}
 						timing.sleep(500);
+						for (int i = 0; i < rows; i++)
+							button[i][colCounter].setBorder(new LineBorder(Color.BLACK, 2));
+						colCounter++;
+						if (colCounter == cols)
+							colCounter = 0;
 					}
-				}
+
 				timing.sleep(0);
 			}
 			catch(InterruptedException e){
